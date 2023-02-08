@@ -19,10 +19,23 @@
 
 if(isset($_POST['submit']))
 {
-    //zapisz oryginalna nazwe pliku
+    //zapisz oryginalna nazwe pliku do lokalnej zmiennej
     $fileName = $_FILES['uploadedFile']['name'];
+    //zapisz tymczasową nazwę pliku do lokalnej zmeinnej
+    $tempFileUrl = $_FILES["uploadedFile"]["tmp_name"];
     //ustaw katalog do wgrywania plikow
     $targetDir = 'img/';
+
+    //sprawdź typ pliku
+    $imageInfo = getimagesize($tempFileUrl);
+    if(!is_array($imageInfo)) {
+        die("ERROR: Incorrect file format");
+    }
+
+    //zaczytaj cały obraz do stringa
+    $imgString = file_get_contents($tempFileUrl);
+
+    $gdImage = imagecreatefromstring($imgString);
 
     //wyciagnij rozszerzenie z oryginalnej nazwy pliku
     $targetExtension = pathinfo($fileName, PATHINFO_EXTENSION);
@@ -30,14 +43,17 @@ if(isset($_POST['submit']))
     $targetExtension = strtolower($targetExtension);
 
     //wygeneruj hash sha-256 jako nowa nazwa pliku
-    $targetFileName = $fileName . hrtime(true);
-    $targetFileName = hash("sha256", $targetFileName);
+    $targetFileUrl = $fileName . hrtime(true);
+    $targetFileUrl = hash("sha256", $targetFileUrl);
 
     //zbuduj pełną ścieżkę do pliku docelowego
-    $targetUrl = $targetDir . $targetFileName . "." . $targetExtension;
+    $targetUrl = $targetDir . $targetFileUrl . "." . $targetExtension;
     if(file_exists($targetUrl))
         die("ERROR: File with the same name already exists.");
-    move_uploaded_file($_FILES["uploadedFile"]["tmp_name"], $targetUrl);
+    
+
+    $targetUrl = $targetDir . $targetFileUrl . ".webp";
+    imagewebp($gdImage, $targetUrl);
 }
 ?>
 
