@@ -43,17 +43,32 @@ if(isset($_POST['submit']))
     $targetExtension = strtolower($targetExtension);
 
     //wygeneruj hash sha-256 jako nowa nazwa pliku
-    $targetFileUrl = $fileName . hrtime(true);
-    $targetFileUrl = hash("sha256", $targetFileUrl);
+    $targetFile = $fileName . hrtime(true);
+    $targetFile = hash("sha256", $targetFile);
 
-    //zbuduj pełną ścieżkę do pliku docelowego
-    $targetUrl = $targetDir . $targetFileUrl . "." . $targetExtension;
-    if(file_exists($targetUrl))
+    $targetUrl = $targetDir . $targetFile . ".webp";
+    $fileName = $targetFile . ".webp";
+    $targetUrl = $targetDir . $fileName;
+
+    if(file_exists($targetUrl)) {
         die("ERROR: File with the same name already exists.");
-    
+    }
 
-    $targetUrl = $targetDir . $targetFileUrl . ".webp";
     imagewebp($gdImage, $targetUrl);
+
+    $db = new mysqli("localhost", "root", "", "post");
+
+    $q = "INSERT post (id, timestamp, filename) VALUES (NULL, ?, ?)";
+    $preparedQ = $db->prepare($q);
+
+    $date = date('Y-m-d H:i:s');
+    $preparedQ->bind_param('ss', $date, $fileName);
+    $result = $preparedQ->execute();
+    if (!$result) {
+        die("Błąd bazy danych");
+    }
+
+
 }
 ?>
 
